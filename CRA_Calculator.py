@@ -69,7 +69,7 @@ with open(csv_file_path, 'w', newline='') as csvfile:
 
     for T4RSP_16 in range (0,50000,10):
                 input_data = [T4_14, T4_17, T4_18, T4_55, T4RSP_16, RRSP_deduction, interest, medical_exp]
-                value = cf.total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, RRSP_deduction, interest, medical_exp)
+                value = cf.total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, 0, "No", RRSP_deduction, interest, medical_exp)
                 csv_writer.writerow(input_data + value)  
 
 print(f"Row has been written to the CSV file '{csv_file_path}' successfully.")

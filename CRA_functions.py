@@ -8,7 +8,7 @@ def total_income (T4_14, interest, T4RSP_16, Foreign_Income,conversion="No"):
     
     # Converting foreign income
     Foreign_Income_CAD = (Foreign_Income if conversion=="No" else Foreign_Income * 1.4597 ) # 2023 average rate
-    
+
     TI = T4_14 + interest + T4RSP_16 + Foreign_Income_CAD
     return (TI)
 
@@ -85,9 +85,9 @@ def net_federal_tax (federal_tax, tax_credit):
     return(NFT)
 
 
-def total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, RRSP_deduction, interest, medical_exp):
+def total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, Foreign_Income, conversion, RRSP_deduction, interest, medical_exp):
     ''' Consolidates the calculation and return list with all main values in return form'''
-    total_income_value = total_income (T4_14, interest, T4RSP_16)
+    total_income_value = total_income (T4_14, interest, T4RSP_16, Foreign_Income, conversion)
     net_income_value = net_income (total_income_value, RRSP_deduction, T4_17)
     taxable_income_value = taxable_income (net_income_value)
     federal_tax_value = federal_tax (taxable_income_value)
