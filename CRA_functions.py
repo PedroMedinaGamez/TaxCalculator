@@ -1,16 +1,22 @@
 
-def total_income (T4_14, interest, T4RSP_16, Foreign_Income,conversion="No"):
+def total_income (T4_14, interest, T4RSP_16, Foreign_Income):
     ''' Total income will sum:
         - Work income : Sum of all T4 box 14
         - Interest earned: Bank should provide
         - RRSP amount withdrawal: T4RSP Box 16
-        - Foreign income - Use bank of canada rate of conversion: https://www.bankofcanada.ca/rates/exchange/annual-average-exchange-rates/'''
-    
+        - Foreign income '''
     # Converting foreign income
-    Foreign_Income_CAD = (Foreign_Income if conversion=="No" else Foreign_Income * 1.4597 ) # 2023 average rate
-
+    Foreign_Income_CAD = Foreign_Income_Converter(Foreign_Income)
     TI = T4_14 + interest + T4RSP_16 + Foreign_Income_CAD
     return (TI)
+
+
+def Foreign_Income_Converter (Foreign_Income):
+    '''Calculate CAD for EUR income \n
+    Use bank of canada rate of conversion: https://www.bankofcanada.ca/rates/exchange/annual-average-exchange-rates/'''
+    
+    Foreign_Income_CAD = (Foreign_Income * 1.4597 ) # 2023 average rate
+    return Foreign_Income_CAD
 
 
 def net_income (total_income, RRSP_deduction, T4_17):
@@ -79,19 +85,64 @@ def tax_credits (taxable_income, T4_17, T4_18, T4_55, total_income,medical_exp, 
     return (tax_credit)
 
 
-def net_federal_tax (federal_tax, tax_credit):
-    ''' Federal tax minus tax credit - No other benefit applies'''
-    NFT = (federal_tax - tax_credit if federal_tax - tax_credit > 0 else 0)
+
+
+# LINE 130 - FEDERAL SURTAX ON INCOME EARNED OUTSIDE CANADA (T2203)
+def federal_surtax_income_outside (net_income,T4_14, T4RSP_16, Foreign_Income, RRSP_deduction, federal_tax, tax_credit):
+    ''' This is the surtax calculation for income obtained out of Canada (T2203):\n
+        Asumming the only Canadian income is produced in QC (T4b14, T4RSP)'''
+    
+    #PART 1
+    try:
+        Outside_perc = Foreign_Income_Converter(Foreign_Income) / net_income
+    except ZeroDivisionError:
+        Outside_perc = 0
+    try:
+        Quebec_perc = (T4_14 + T4RSP_16 - RRSP_deduction)/ net_income
+    except ZeroDivisionError:
+        Quebec_perc = 0
+
+    #PART 2
+    Surtax_out = (federal_tax - tax_credit) * Outside_perc * 0.48
+
+    if Quebec_perc != 0:
+        Quebec_abatement = (federal_tax - tax_credit) * Quebec_perc * 0.165
+    else:
+        Quebec_abatement = 0
+
+    return(Surtax_out, Quebec_abatement)
+# LINE 132 - FEDERAL FOREIGN TAX CREDIT (T2209):
+        
+
+
+
+def net_federal_tax (federal_tax, tax_credit, net_income,T4_14, T4RSP_16, Foreign_Income, RRSP_deduction):
+    ''' Federal tax : \n
+    - Tax Credits
+    - Federal surtax on foreign income - Line 130'''
+
+    # Line 130
+    if Foreign_Income != 0:
+        Surtax_out = federal_surtax_income_outside(net_income,T4_14, T4RSP_16, Foreign_Income, RRSP_deduction, federal_tax, tax_credit)[0]
+    else:
+        Surtax_out = 0
+        
+
+    calculation = federal_tax - tax_credit + Surtax_out
+    
+    NFT = (calculation if calculation > 0 else 0)
     return(NFT)
 
 
-def total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, Foreign_Income, conversion, RRSP_deduction, interest, medical_exp):
+
+
+def total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, Foreign_Income, RRSP_deduction, interest, medical_exp):
     ''' Consolidates the calculation and return list with all main values in return form'''
-    total_income_value = total_income (T4_14, interest, T4RSP_16, Foreign_Income, conversion)
+    total_income_value = total_income (T4_14, interest, T4RSP_16, Foreign_Income)
     net_income_value = net_income (total_income_value, RRSP_deduction, T4_17)
     taxable_income_value = taxable_income (net_income_value)
     federal_tax_value = federal_tax (taxable_income_value)
     tax_credit_value = tax_credits (taxable_income_value, T4_17, T4_18, T4_55, total_income_value,medical_exp, net_income_value)
-    net_federal_tax_value = net_federal_tax (federal_tax_value, tax_credit_value)
+    net_federal_tax_value = net_federal_tax (federal_tax_value, tax_credit_value, net_income_value,T4_14, T4RSP_16, Foreign_Income, RRSP_deduction)
 
     return ([total_income_value, net_income_value, taxable_income_value, federal_tax_value, tax_credit_value, net_federal_tax_value])

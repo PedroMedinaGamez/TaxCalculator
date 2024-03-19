@@ -3,8 +3,9 @@ import csv
 import os
 
 # Define the path to the CSV files
-csv_file_path = 'RRSP_Extraction_no_income.csv'
-
+path = r'C:\Users\pedro\OneDrive\Desktop\Cursos\Python\Results_of_TaxCalculator'
+csv_file_name = 'RRSP_Extraction_no_income.csv'
+csv_file_path = os.path.join(path,csv_file_name)
 ############
 #    T4    #
 ############
@@ -24,7 +25,7 @@ RRSP_deduction = 0 # Money inserted in RRSP
 ############
 interest = 100
 medical_exp = 0
-
+Foreign_Income = 0
     # Write the row data to the CSV file
 
 
@@ -69,7 +70,7 @@ with open(csv_file_path, 'w', newline='') as csvfile:
 
     for T4RSP_16 in range (0,50000,10):
                 input_data = [T4_14, T4_17, T4_18, T4_55, T4RSP_16, RRSP_deduction, interest, medical_exp]
-                value = cf.total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, 0, "No", RRSP_deduction, interest, medical_exp)
+                value = cf.total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, Foreign_Income, RRSP_deduction, interest, medical_exp)
                 csv_writer.writerow(input_data + value)  
 
 print(f"Row has been written to the CSV file '{csv_file_path}' successfully.")
