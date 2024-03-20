@@ -1,6 +1,6 @@
 import Foreign_Income_functions as fi
 
-def total_income (T4_14, interest, T4RSP_16, Foreign_Income):
+def total_income (T4_14, interest, T4RSP_16, Foreign_Income, printing):
     ''' Total income will sum:
         - Work income : Sum of all T4 box 14
         - Interest earned: Bank should provide
@@ -9,13 +9,18 @@ def total_income (T4_14, interest, T4RSP_16, Foreign_Income):
     # Converting foreign income
     Foreign_Income_CAD = fi.Foreign_Income_Converter(Foreign_Income)
     TI = T4_14 + interest + T4RSP_16 + Foreign_Income_CAD
+
+    #Priting
+    if printing == True:
+        printer(["Step 2 - Total Income",(10100,T4_14),(10400,Foreign_Income),(12100,interest),(12900,T4RSP_16),("15000 (Total Income)",TI)])
+    
     return (TI)
 
 
 
 
 
-def net_income (total_income, RRSP_deduction, T4_17):
+def net_income (total_income, RRSP_deduction, T4_17, printing):
     ''' Net income will be total income minus:
         - RRSP deduction: Amount added to RRSP
         - QCC contribution: Calculated from T4 box 17 '''
@@ -23,15 +28,26 @@ def net_income (total_income, RRSP_deduction, T4_17):
     QCC_cont = (T4_17 if T4_17<QCC_max else QCC_max)
 
     NI = total_income - RRSP_deduction - QCC_cont
+
+    if printing == True:
+        printer(["Step 3 - Net Income", (20800,RRSP_deduction),(22215, QCC_cont), ("23400 (Net Income)",NI)])
+        
     return (NI)
 
 
-def taxable_income (net_income):
+def taxable_income (net_income, printing):
     '''No exception applies to me for variation between
     taxable income and net income so TI = NI'''
-    return(net_income)
 
-def federal_tax (taxable_income):
+    TI = net_income
+
+    if printing == True:
+        printer(["Step 4 - Taxable Income", ("23600 (Taxable Income)",TI)])     
+    
+    return(TI)
+
+
+def federal_tax (taxable_income, printing):
     ''' Calculate federal tax in steps 
     (Didn't add for more than 165,430 $)'''
     ti = taxable_income
@@ -41,11 +57,14 @@ def federal_tax (taxable_income):
         ft = (ti-53359)*0.205 + 8003.85
     else:
         ft = (ti-106717)*26 + 18942.24
+    
+    if printing == True:
+        printer(["Step 5 - Federal Tax", ("76 (Federal Tax)", ft)])      
+     
     return (ft)
 
 
-
-def tax_credits (taxable_income, T4_17, T4_18, T4_55, total_income,medical_exp, net_income, donations=0):
+def tax_credits (taxable_income, T4_17, T4_18, T4_55, total_income,medical_exp, net_income, printing, donations=0):
     ''' Initial value = 15000 (Unless income over 165,430$) 
         \nAdded:\n
         - QQC Contribution: Calculated from T4 box 17 - Max 3407$
@@ -78,20 +97,19 @@ def tax_credits (taxable_income, T4_17, T4_18, T4_55, total_income,medical_exp, 
 
     tax_credit = (tc_ini + QCC_cont + EI_prem + PPIP_prem + CEA + medical_deduction)*0.15 + donations
 
+    if printing == True:
+        printer(["Step 5B - Non Refundable Tax Credits",(30000,tc_ini),(30800,QCC_cont),(31200,EI_prem),(31205,PPIP_prem),(31260,CEA),(33099,medical_exp),(33200,medical_deduction)])
+  
     return (tax_credit)
 
 
 
-
-
-
-
-
-def net_federal_tax (federal_tax, tax_credit, net_income,T4_14, T4RSP_16, Foreign_Income, RRSP_deduction, Foreign_tax):
+def net_federal_tax (federal_tax, tax_credit, net_income,T4_14, T4RSP_16, Foreign_Income, RRSP_deduction, Foreign_tax, printing):
     ''' Federal tax : \n
     - Tax Credits
     - Federal surtax on foreign income - Line 130'''
 
+    basic_federal_tax =federal_tax - tax_credit
     # Line 130, 132
     if Foreign_Income != 0:
         Surtax_out = fi.federal_surtax_income_outside(net_income,T4_14, T4RSP_16, Foreign_Income, RRSP_deduction, federal_tax, tax_credit)
@@ -102,21 +120,45 @@ def net_federal_tax (federal_tax, tax_credit, net_income,T4_14, T4RSP_16, Foreig
 
     Quebec_abatement = (federal_tax - tax_credit) * 0.165
 
-    calculation = federal_tax - tax_credit + Surtax_out - Foreign_Tax_Credit - Quebec_abatement
+    calculation = basic_federal_tax - Foreign_Tax_Credit - Quebec_abatement # + Surtax_out
     
     NFT = (calculation if calculation > 0 else 0)
+
+    if printing == True:
+        printer(["Step 5C - Net federal Tax", (40400,federal_tax),(128,tax_credit),(42900,basic_federal_tax),("130: Federal Surtax removed", Surtax_out),(44000,Quebec_abatement), (48200, NFT)])
     return(NFT)
 
 
 
 
-def total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, Foreign_Income, Foreign_tax, RRSP_deduction, interest, medical_exp):
+
+
+def total_calculation (T4_14, T4_17, T4_18, T4_55, T4RSP_16, Foreign_Income, Foreign_tax, RRSP_deduction, interest, medical_exp, printing=True):
     ''' Consolidates the calculation and return list with all main values in return form'''
-    total_income_value = total_income (T4_14, interest, T4RSP_16, Foreign_Income)
-    net_income_value = net_income (total_income_value, RRSP_deduction, T4_17)
-    taxable_income_value = taxable_income (net_income_value)
-    federal_tax_value = federal_tax (taxable_income_value)
-    tax_credit_value = tax_credits (taxable_income_value, T4_17, T4_18, T4_55, total_income_value,medical_exp, net_income_value)
-    net_federal_tax_value = net_federal_tax (federal_tax_value, tax_credit_value, net_income_value,T4_14, T4RSP_16, Foreign_Income, RRSP_deduction, Foreign_tax)
+    total_income_value = total_income (T4_14, interest, T4RSP_16, Foreign_Income,printing)
+    net_income_value = net_income (total_income_value, RRSP_deduction, T4_17,printing)
+    taxable_income_value = taxable_income (net_income_value,printing)
+    federal_tax_value = federal_tax (taxable_income_value, printing)
+    tax_credit_value = tax_credits (taxable_income_value, T4_17, T4_18, T4_55, total_income_value,medical_exp, net_income_value, printing)
+    net_federal_tax_value = net_federal_tax (federal_tax_value, tax_credit_value, net_income_value,T4_14, T4RSP_16, Foreign_Income, RRSP_deduction, Foreign_tax, printing)
+
+
+    
 
     return ([total_income_value, net_income_value, taxable_income_value, federal_tax_value, tax_credit_value, net_federal_tax_value])
+
+
+
+def printer (value):
+    ''' Printing values corresponding to each line in following way\n
+    ----------------
+    Header
+    ----------------
+    Line x : value
+    
+    to insert it --> printer(["Header",(x,value)])'''
+
+    print (f"----------------------\n{value[0]}\n----------------------")
+    for i in value[1:]:
+        print(f'Line {i[0]}: {i[1]}')
+        if i == value[-1] : print("")

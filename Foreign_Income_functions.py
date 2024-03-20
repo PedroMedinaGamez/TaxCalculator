@@ -27,7 +27,7 @@ def federal_surtax_income_outside (net_income,T4_14, T4RSP_16, Foreign_Income, R
 
 def federal_foreign_tax_credit (Foreign_tax,Foreign_Income, net_income, federal_tax, tax_credit ):
     ''' Use T2209'''
-    Foreign_tax_CAD = Foreign_Income_Converter(Foreign_tax)
+    Foreign_tax_CAD = Foreign_Income_Converter(Foreign_tax) * 0.33 #Applying 33% taxes in Spain
     calculation = (Foreign_Income_Converter(Foreign_Income) / net_income) * (federal_tax - tax_credit)
     FFTC = (calculation if calculation < Foreign_tax_CAD else Foreign_tax_CAD)
     print(Foreign_tax_CAD)

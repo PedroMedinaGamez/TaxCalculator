@@ -25,7 +25,7 @@ RRSP_deduction = 0 # Money inserted in RRSP
 ############
 interest = 100
 medical_exp = 0
-Foreign_Income = 20000
+Foreign_Income = 30000
 Foreign_tax = Foreign_Income * 0.35 #Applying 35% on Spanish taxes
     # Write the row data to the CSV file
 
